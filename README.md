@@ -1,32 +1,10 @@
-# Rook as an alternative to EBS in AWS
+# Rook as an alternative to EBS in hetzner
 
-To evaluate storage options we’ll setup a [Kubernetes][1] cluster in AWS with a rook cluster deployed along with tools for debugging and metrics collection. Then we’ll deploy a pod with 3 different volumes to compare [Rook][2] block storage (backed by instance store), EBS gp2, and EBS io1 (SSD) (re: [EBS volume types][3]).
+To evaluate storage options we’ll setup a [Kubernetes][1] cluster in hetzner with a rook cluster deployed along with tools for debugging and metrics collection. Then we’ll deploy a pod with 3 different volumes to compare [Rook][2] block storage (backed by instance store), EBS gp2, and EBS io1 (SSD) (re: [EBS volume types][3]).
 
 ## 1. Kubernetes cluster setup
 
-[Kubernetes kops][4] was used to setup Kubernets cluster in AWS.
-
-For this test Kubernetes nodes are a mid range `i3.2xlarge`, with instance storage (1900 GiB NVMe SSD) and Up to 10 Gigabit networking performance. Kubernetes is installed on Ubuntu 16.04 LTS with 3 nodes plus the master.
-
-Upon finishing the `kops` create, we should have fully functioning Kubernetes cluster, kops even sets up context for the newlly created cluster in kube config.
-
-```bash
-$ brew install kops
-$ kops create cluster $NAME \
-  --node-count 3 \
-  --zones "us-west-2c" \
-  --node-size "i3.2xlarge" \
-  --master-size "m3.medium" \
-  --master-zones "us-west-2c" \
-  --admin-access x.x.x.x/32 \
-  --api-loadbalancer-type public \
-  --cloud aws \
-  --image "ami-2606e05e" \
-  --kubernetes-version 1.8.2 \
-  --ssh-access x.x.x.x/32 \
-  --ssh-public-key ~/.ssh/me.pub \
-  --yes
-...
+```
 $ kubectl get nodes
 NAME                                          STATUS    AGE       VERSION
 ip-172-20-42-159.us-west-2.compute.internal   Ready     1m        v1.8.2
@@ -81,51 +59,22 @@ The Rook toolbox was started to provide better visibility into the Rook cluster.
 ```bash
 $ kubectl create -f k8s/rook-tools.yaml
 pod "rook-tools" created
-$ kubectl -n rook exec -it rook-tools -- rookctl status
-OVERALL STATUS: OK
-
-USAGE:
-TOTAL      USED       DATA      AVAILABLE
-5.18 TiB   6.00 GiB   0 B       5.18 TiB
-
-MONITORS:
-NAME             ADDRESS                 IN QUORUM   STATUS
-rook-ceph-mon0   100.66.63.114:6790/0    true        OK
-rook-ceph-mon1   100.66.113.38:6790/0    true        OK
-rook-ceph-mon2   100.68.185.191:6790/0   true        OK
-
-MGRs:
-NAME             STATUS
-rook-ceph-mgr0   Active
-rook-ceph-mgr0   Standby
-
-OSDs:
-TOTAL     UP        IN        FULL      NEAR FULL
-2         2         2         false     false
-
-PLACEMENT GROUPS (100 total):
-STATE          COUNT
-active+clean   100
+$ kubectl -n rook exec -it rook-tools bash
+ceph status
+ceph osd status
+ceph df
+rados df
 ```
 
-At this point we have Kubernetes with Rook cluster up and running in AWS, we’ll be provisioning storage in the next steps.
+At this point we have Kubernetes with Rook cluster up and running in hetzner, we’ll be provisioning storage in the next steps.
 
 ## 3. Evaluation pod setup
 
 Let’s create Persistent Volume Claim (PVC) using Rook block device attached to our testing pod along with different types of EBS devices. Before we proceed, EBS volumes have to be created, note _volume IDs_ outputted by each command to be used in our manifest later:
 
-```bash
-$ aws ec2 create-volume --availability-zone=us-west-2b --size=120 --volume-type=gp2
-...
-$ aws ec2 create-volume --availability-zone=us-west-2b --size=120 --volume-type=io1 --iops=6000
-...
-```
-
 Let’s create a pod with 3 volumes to run our FIO tests against:
 
 1. Rook volume mounted to `/eval`. 120 GiB, `ext4`.
-1. EBS io1 (Provisioned IOPS = 6K) volume mounted to `/eval-io1`. 120 GiB `ext4`.
-1. EBS gp2 (General purpose) volume mounted to `/eval-gp2`. 120 GiB, `ext4`.
 
 Note that the blog writeup focused on the performance of the `io1` volume for a high performance IOPS scenario.
 

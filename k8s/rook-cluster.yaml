@@ -23,5 +23,5 @@ spec:
       databaseSizeMB: 1024
       journalSizeMB: 1024
     nodes:
-    - name: ip-172-20-59-17.us-west-2.compute.internal 
-    - name: ip-172-20-60-156.us-west-2.compute.internal
+    - name: n1
+    - name: n2
