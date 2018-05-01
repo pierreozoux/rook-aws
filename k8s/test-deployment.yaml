@@ -19,7 +19,7 @@ metadata:
   name: eval
 spec:
   selector:
-    app: MyApp
+    app: eval
   type: NodePort
   ports:
   - protocol: TCP
