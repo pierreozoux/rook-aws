@@ -1,3 +1,30 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rookeval-claim
+  labels:
+    app: eval
+spec:
+  storageClassName: rook-block
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 320Gi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: eval
+spec:
+  selector:
+    app: MyApp
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 8000
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -12,6 +39,8 @@ spec:
       labels:
         app: eval
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: rook-worker-01
       containers:
       - image: ubuntu
         name: rookeval

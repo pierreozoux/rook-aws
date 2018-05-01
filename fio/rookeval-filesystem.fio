@@ -1,11 +1,14 @@
-cat >> rookeval-filesystem.fio << EOF
 # Rook vol vs. EBS gp2 vs. EBS io1 6k iops
 # 120 GiB ext4 with default mount options
 # Block sizes: 4k, 16k, 128k, 1024k
 # IO size 20 GiB
-
+#
+# Intall:
+# apt-get update && apt-get install -y fio gnuplot vim curl
+# curl https://raw.githubusercontent.com/pierreozoux/rook-hetzner/master/fio/rookeval-filesystem.fio > rookeval-filesystem.fio
+#
 # Example:
-# $ fio rookeval-filesystem.fio --output-format=json --output=results.json
+# $ fio rookeval-filesystem.fio --output-format=terse --output=results.csv
 
 [global]
 ioengine=libaio
@@ -18,95 +21,21 @@ directory=/eval
 filename=fio-test.file
 
 ###
-#     block size 4k
-#
-[seq-read-4k]
-bs=4k
-rw=read
-stonewall
-
-[rand-read-4k]
-bs=4k
-rw=randread
-stonewall
-
-[seq-write-4k]
-bs=4k
-rw=write
-stonewall
-
-[rand-write-4k]
-bs=4k
-rw=randwrite
-stonewall
-
-###
 #     block size 16k
 #
-[seq-read-16k]
-bs=16k
-rw=read
-stonewall
-
 [rand-read-16k]
 bs=16k
 rw=randread
 stonewall
+write_bw_log=rand-read-16k
+write_iops_log=rand-read-16k
+write_lat_log=rand-read-16k
 
-[seq-write-16k]
-bs=16k
-rw=write
-stonewall
 
 [rand-write-16k]
 bs=16k
 rw=randwrite
 stonewall
-
-###
-#     block size 128k
-#
-[seq-read-128k]
-bs=128k
-rw=read
-stonewall
-
-[rand-read-128k]
-bs=128k
-rw=randread
-stonewall
-
-[seq-write-128k]
-bs=128k
-rw=write
-stonewall
-
-[rand-write-128k]
-bs=128k
-rw=randwrite
-stonewall
-
-###
-#     block size 1024k
-#
-[seq-read-1024k]
-bs=1024k
-rw=read
-stonewall
-
-[rand-read-1024k]
-bs=1024k
-rw=randread
-stonewall
-
-[seq-write-1024k]
-bs=1024k
-rw=write
-stonewall
-
-[rand-write-1024k]
-bs=1024k
-rw=randwrite
-stonewall
-
-EOF
+write_bw_log=rand-write-16k
+write_iops_log=rand-write-16k
+write_lat_log=rand-write-16k
