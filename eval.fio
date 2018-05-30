@@ -1,0 +1,33 @@
+# Rook vol vs. EBS gp2 vs. EBS io1 6k iops
+#
+# Example:
+
+[global]
+ioengine=libaio
+iodepth=32
+direct=1
+runtime=60
+invalidate=1
+size=10g
+directory=/eval
+filename=fio-test.file
+
+###
+#     block size 16k
+#
+[rand-read-16k]
+bs=16k
+rw=randread
+stonewall
+write_bw_log=rand-read-16k
+write_iops_log=rand-read-16k
+write_lat_log=rand-read-16k
+
+
+[rand-write-16k]
+bs=16k
+rw=randwrite
+stonewall
+write_bw_log=rand-write-16k
+write_iops_log=rand-write-16k
+write_lat_log=rand-write-16k
